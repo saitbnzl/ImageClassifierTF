@@ -4,6 +4,19 @@ import tensorflow as tf          # Fire from the gods
 import matplotlib.pyplot as plt  # Visualize the things
 import matplotlib.image as img
 import os
+import sys
+
+if "-floyd" in sys.argv:
+    output_path = "/output/"
+else:
+    output_path = "./output/"
+
+
+def loadModel():
+    if os.path.isfile(output_path+"model.ckpt.meta"):
+        saver = tf.train.import_meta_graph(output_path+'model.ckpt.meta')
+        saver.restore(sess, output_path+"model.ckpt")
+        print("Model restored...")
 
 def guess(input_file):
     image = img.imread(input_file)
@@ -36,7 +49,7 @@ for i in range(inputY.shape[0]):
 
 # Parameters
 learning_rate = 0.0001
-training_epochs = 100000
+training_epochs = 200
 display_step = 50
 n_samples = inputY.size
 
@@ -45,20 +58,20 @@ n_nodes_hl2 = 500
 n_nodes_hl3 = 500
 
 hidden_l1 = {
-    'weights':tf.Variable(tf.random_normal([n_pixels, n_nodes_hl1],dtype=tf.float32)),
-    'biases':tf.Variable(tf.random_normal([n_nodes_hl1],dtype=tf.float32))
+    'weights':tf.Variable(tf.random_normal([n_pixels, n_nodes_hl1],dtype=tf.float32),name="h1w"),
+    'biases':tf.Variable(tf.random_normal([n_nodes_hl1],dtype=tf.float32),name="h1b")
 }
 hidden_l2 = {
-    'weights':tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2],dtype=tf.float32)),
-    'biases':tf.Variable(tf.random_normal([n_nodes_hl2],dtype=tf.float32))
+    'weights':tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2],dtype=tf.float32),name="h2w"),
+    'biases':tf.Variable(tf.random_normal([n_nodes_hl2],dtype=tf.float32),name="h2b")
 }
 hidden_l3 = {
-    'weights':tf.Variable(tf.random_normal([n_nodes_hl2, n_nodes_hl3],dtype=tf.float32)),
-    'biases':tf.Variable(tf.random_normal([n_nodes_hl3],dtype=tf.float32))
+    'weights':tf.Variable(tf.random_normal([n_nodes_hl2, n_nodes_hl3],dtype=tf.float32),name="h3w"),
+    'biases':tf.Variable(tf.random_normal([n_nodes_hl3],dtype=tf.float32),name="h3b")
 }
 output_layer = {
-    'weights':tf.Variable(tf.random_normal([n_nodes_hl3, n_classes],dtype=tf.float32)),
-    'biases':tf.Variable(tf.random_normal([n_classes],dtype=tf.float32))
+    'weights':tf.Variable(tf.random_normal([n_nodes_hl3, n_classes],dtype=tf.float32),name="ow"),
+    'biases':tf.Variable(tf.random_normal([n_classes],dtype=tf.float32),name="ob")
 }
 
 
@@ -89,7 +102,15 @@ optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
-
+saver = tf.train.Saver({"h1w":hidden_l1['weights'],
+                        "h1b": hidden_l1['biases'],
+                        "h2w": hidden_l2['weights'],
+                        "h2b": hidden_l2['biases'],
+                        "h3w": hidden_l3['weights'],
+                        "h3b": hidden_l3['biases'],
+                        "ow": output_layer['weights'],
+                        "ob": output_layer['biases']})
+loadModel()
 for i in range(training_epochs):
     sess.run(optimizer, feed_dict={x: inputX, y_: inputY}) # Take a gradient descent step using our inputs and labels
 
@@ -102,9 +123,15 @@ for i in range(training_epochs):
         guess("test_apple2.jpg")
         guess("test_bananas1.jpg")
         guess("test_bananas2.jpg")
+save_path = saver.save(sess, output_path+"model.ckpt")
+print("Model saved in file: %s" % save_path)
 print("Optimization Finished!")
 _, c = sess.run([optimizer, cost], feed_dict={x: inputX, y_: inputY})
 print("Training cost=", c)
+
+
+
+
 
 
 
