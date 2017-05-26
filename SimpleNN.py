@@ -29,7 +29,7 @@ def loadModel():
             saver.restore(sess, output_path+"model.ckpt")
             print("Model restored...")
 
-def guess(input_file):
+def load_and_guess(input_file):
     with tf.Session() as sess:
         image = img.imread(input_file)
         image = np.asarray(image)
@@ -114,10 +114,6 @@ def train_network():
             _, c = sess.run([optimizer, cost], feed_dict={x: inputX, y_: inputY})
             if (i) % display_step == 0:
                 print("Training step:", '%04d' % (i), "cost=", "{:.9f}".format(c)) #, \"W=", sess.run(W), "b=", sess.run(b)
-                guess("test_apple1.jpg")
-                guess("test_apple2.jpg")
-                guess("test_bananas1.jpg")
-                guess("test_bananas2.jpg")
         save_path = saver.save(sess, output_path+"model.ckpt")
         print("Model saved in file: %s" % save_path)
         print("Optimization Finished!")
